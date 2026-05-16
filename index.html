@@ -1553,7 +1553,7 @@ function renderConfig() {
 // ═══════════════════════════════════════════════════════════════════════════
 // ACTIONS
 // ═══════════════════════════════════════════════════════════════════════════
-function addLanc() {
+  async function addLanc() {
   const data = document.getElementById('f-data').value;
   const cat  = document.getElementById('f-cat').value;
   const desc = document.getElementById('f-desc').value;
@@ -1561,12 +1561,26 @@ function addLanc() {
   const tipo = document.querySelector('#tipo-chips .chip.sel').textContent.trim();
   if (!data || !val || isNaN(val)) { toast('Preencha data e valor!'); return; }
   const sinal = tipo === 'Receita' ? 1 : -1;
-  state.lancamentos.push({id:state.nextId++, data, cat, desc, tipo, val: Math.abs(val) * sinal});
+  const novoLanc = {id:state.nextId++, data, cat, desc, tipo, val: Math.abs(val)*sinal};
+
+  // Salvar no Supabase
+  const { data: user } = await db.auth.getUser();
+  if (user?.user) {
+    await db.from('lancamentos').insert({
+      usuario_id: user.user.id,
+      data: data,
+      categoria: cat,
+      descricao: desc,
+      tipo: tipo,
+      valor: Math.abs(val)
+    });
+  }
+
+  state.lancamentos.push(novoLanc);
   limparForm();
   renderAll();
-  toast('Lançamento adicionado!');
+  toast('Lançamento salvo no banco! ✅');
 }
-
 function addLancModal() {
   const data = document.getElementById('ml-data').value;
   const cat  = document.getElementById('ml-cat').value;
